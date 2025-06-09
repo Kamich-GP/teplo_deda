@@ -91,6 +91,67 @@ def choose_count(call):
                          reply_markup=buttons.main_menu(database.get_pr_buttons()))
 
 
+# Обработка работы корзины
+@bot.callback_query_handler(lambda call: call.data in ['cart', 'clear', 'order'])
+def cart_handle(call):
+    user_id = call.message.chat.id
+    text = 'Ваша корзина:\n\n'
+
+    if call.data == 'cart':
+        user_cart = database.show_cart(user_id)
+        total = 0.0
+
+        for i in user_cart:
+            text += (f'Товар: {i[1]}\n'
+                     f'Количество: {i[2]}\n'
+                     f'------------------------\n')
+            total += database.get_exact_price(i[1]) * i[2]
+        text += f'Итого: {round(total, 2)}'
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, text, reply_markup=buttons.cart_buttons())
+    elif call.data == 'clear':
+        database.clear_cart(user_id)
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, 'Выберите пункт меню:',
+                         reply_markup=buttons.main_menu(database.get_pr_buttons()))
+    elif call.data == 'order':
+        text = text.replace('Ваша корзина:', f'Новый заказ!\nКлиент @{call.message.chat.username}\n')
+        user_cart = database.show_cart(user_id)
+        total = 0.0
+
+        for i in user_cart:
+            text += (f'Товар: {i[1]}\n'
+                     f'Количество: {i[2]}\n'
+                     f'------------------------\n')
+            total += database.get_exact_price(i[1]) * i[2]
+        text += f'Итого: {round(total, 2)}'
+        bot.delete_message(chat_id=user_id, message_id=call.message.message_id)
+        bot.send_message(user_id, 'Отправьте локацию, куда доставить ваш заказ!',
+                         reply_markup=buttons.loc_button())
+        # Переход на этап получения локации
+        bot.register_next_step_handler(call.message, get_loc, text)
+
+
+# Этап получения локации
+def get_loc(message, text):
+    user_id = message.from_user.id
+    # Проверка на правильность отправки локации
+    if message.location:
+        bot.send_message('ваш_тг_айди', text)
+        bot.send_location('ваш_тг_айди', latitude=message.location.latitude,
+                          longitude=message.location.longitude)
+        database.make_order(user_id)
+        database.clear_cart(user_id)
+        bot.send_message(user_id, 'Ваш заказ оформлен успешно! Скоро с вами свяжутся!',
+                         reply_markup=telebot.types.ReplyKeyboardRemove())
+        bot.send_message(user_id, 'Выберите пункт меню:',
+                         reply_markup=buttons.main_menu(database.get_pr_buttons()))
+    else:
+        bot.send_message(user_id, 'Отправьте локацию по кнопке!')
+        # Возвращаем на этап получения локации
+        bot.register_next_step_handler(message, get_loc, text)
+
+
 # Обработчик команды /admin
 @bot.message_handler(commands=['admin'])
 def admin(message):

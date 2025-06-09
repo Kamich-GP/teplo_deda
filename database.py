@@ -52,7 +52,7 @@ def get_exact_pr(pr_id):
 # Вывод цены конкретного товара
 def get_exact_price(pr_name):
     return sql.execute('SELECT pr_price FROM '
-                       'products WHERE pr_name=?;', (pr_name,)).fetchone()
+                       'products WHERE pr_name=?;', (pr_name,)).fetchone()[0]
 
 
 ## Корзина ##
@@ -86,7 +86,7 @@ def make_order(tg_id):
 
     # Достаем кол-во товара на СКЛАДЕ
     stock = [sql.execute('SELECT pr_count FROM products '
-                         'WHERE pr_name=?;', (i[0])).fetchone()[0]
+                         'WHERE pr_name=?;', (i[0],)).fetchone()[0]
              for i in product_names]
 
     totals = []

@@ -1,7 +1,5 @@
 from telebot import types
 
-from database import clear_cart
-
 
 # Кнопка отправки номера
 def num_button():
@@ -9,6 +7,18 @@ def num_button():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     # Создание самих кнопок
     but1 = types.KeyboardButton('Отправить номер телефона📞', request_contact=True)
+    # Добавление кнопок в пространство
+    kb.add(but1)
+
+    return kb
+
+
+# Кнопка отправки локации
+def loc_button():
+    # Создание пространства
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    # Создание самих кнопок
+    but1 = types.KeyboardButton('Отправить геопозицию📍', request_location=True)
     # Добавление кнопок в пространство
     kb.add(but1)
 
